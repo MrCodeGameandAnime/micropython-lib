@@ -1,58 +1,32 @@
 # enum_mini.py
 # Minimalist Enum implementation without metaclasses
 
-# ==============================================================================
-# Variable & Abbreviation Definitions:
-# ==============================================================================
-# Functions & Helper Methods:
-#   _c(cls, n, v) -> create_enum_item: Helper function to construct a typed enum instance.
-#   _i()        -> items: Classmethod to initialize and return the __members__ dict.
-#   a(s, k, v)  -> __setattr__: Inner setter guard raising AttributeError on enum items.
-#
-# Helper Arguments & Local Variables:
-#   e       - enum_name / enum_item: Class name string or instance of an enum item.
-#   n       - name: String representing the enum member key (e.g., "RED").
-#   v       - value / member value: Value assigned to, searched within, or passed to lookup.
-#   c       - class / new_class: Dynamically created Enum subclass via `type()`.
-#   t       - value_type: Target constraint type (`int`, `str`, or `None` for generic Enum).
-#   l       - names_list: List of parsed string keys from comma/space-separated inputs.
-#   d       - dict / mapping: Temporary dictionary for parsed enum members.
-#   k, v    - key, value: Key-value pair during iteration over attributes or dictionaries.
-#   i       - item: Individual enum member instance during iteration.
-#   __members__ - Dictionary mapping enum member instances to their raw values.
-#   s, k, o - self, key/attribute_name, other_enum (standard short parameters).
-#   f       - function: The body function of the class being defined.
-#   b       - bases: Tuple of base classes passed during class creation.
-#   kw      - kwargs: Additional keyword arguments passed during class creation.
-#   cls     - class object: Target class being created or initialized.
-# ==============================================================================
-
 
 def _n(n):
     # str.capitalize()
     return n[0].upper() + n[1:]
 
 
-def _c(cls, n, v):
+def _c(cls, name, value):
     # prevent modification of enum item attributes
-    def a(s, k, v):
+    def readonly(self, key, value):
         raise AttributeError("readonly")
 
-    e = cls.__name__
+    enum_name = cls.__name__
 
-    # create a subclass inheriting the value's type (int, str, float etc.)
+    # create readonly subclass inheriting the value'self type (int, str, float etc.)
     return type(
-        f"{e}.{n}",
-        (type(v), cls),
+        f"{enum_name}.{name}",
+        (type(value), cls),
         {
-            "name": n,
-            "value": v,
-            "__str__": lambda s: f"{e}.{n}",
-            "__repr__": lambda s: f"<{e}.{n}: {v!r}>",
-            "__call__": lambda s: v,
-            "__setattr__": a,
+            "name": name,
+            "value": value,
+            "__str__": lambda self: f"{enum_name}.{name}",
+            "__repr__": lambda self: f"<{enum_name}.{name}: {value!r}>",
+            "__call__": lambda self: value,
+            "__setattr__": readonly,
         },
-    )(v)
+    )(value)
 
 
 class Enum:
@@ -129,7 +103,6 @@ import builtins
 _orig = builtins.__build_class__
 
 
-# def _build_class(function, name, *bases, **kwargs):
 def _bc(f, n, *b, **kw):
     # when a base is an Enum instance (returned by cls()), extract its class
     b = tuple(type(e) if isinstance(e, Enum) else e for e in b)
